@@ -7,7 +7,7 @@ const SqlFormatter: React.FC = () => {
     if (!input.trim()) return '';
     return format(input, {
       language: 'sql',
-      uppercase: true,
+      keywordCase: 'upper',
     });
   };
 
