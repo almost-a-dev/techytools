@@ -64,8 +64,12 @@ To keep your infrastructure secure in a public repository:
 
 ### One-time Setup
 
-Before you can use Terraform, you need to create the storage for the state:
+Before you can use Terraform, you need to create the storage for the state and register the required providers:
 ```bash
+# Register providers (Required for Contributor role)
+az provider register --namespace Microsoft.Web
+az provider register --namespace Microsoft.Storage
+
 # Create Resource Group
 az group create --name rg-terraform-state --location westeurope
 
@@ -78,19 +82,35 @@ az storage container create --name tfstate --account-name techytoolstfstate
 
 ### GitHub Secrets Required
 
-Add the following secrets to your GitHub repository:
-- `AZURE_CLIENT_ID`: Service Principal Application (client) ID.
-- `AZURE_CLIENT_SECRET`: Service Principal Secret.
-- `AZURE_SUBSCRIPTION_ID`: Azure Subscription ID.
-- `AZURE_TENANT_ID`: Azure Tenant ID.
+Add the following secrets to your GitHub repository under **Settings > Secrets and variables > Actions**:
+
+#### 1. Azure Authentication (Service Principal)
+To get these, run this command in your terminal:
+```bash
+# Replace <subscription-id> with your actual subscription ID
+az ad sp create-for-rbac --name "techytools-github-action" --role contributor --scopes /subscriptions/<subscription-id> --sdk-auth
+```
+This will output a JSON block. Map the values as follows:
+- `AZURE_CLIENT_ID`: The `clientId` from the output.
+- `AZURE_CLIENT_SECRET`: The `clientSecret` from the output.
+- `AZURE_SUBSCRIPTION_ID`: Your Azure Subscription ID.
+- `AZURE_TENANT_ID`: Your Azure Tenant ID.
+
+#### 2. Terraform State Configuration
 - `TF_STATE_RG`: `rg-terraform-state`
-- `TF_STATE_STORAGE_ACCOUNT`: `techytoolstfstate`
+- `TF_STATE_STORAGE_ACCOUNT`: Your storage account name (e.g., `techytoolstfstate`).
 - `TF_STATE_CONTAINER`: `tfstate`
+
+#### Troubleshooting: Authorization (403) Error
+Ensure you granted the "Contributor" role at the **Subscription** level:
+```bash
+az role assignment create --assignee <AZURE_CLIENT_ID> --role "Contributor" --scope /subscriptions/<AZURE_SUBSCRIPTION_ID>
+```
 
 ## Teardown / Deletion
 
 If you want to destroy the static site and stop deployment:
-1. **Terraform**: If you used Terraform, run `terraform destroy` locally or via a manual GitHub Action run to remove all infrastructure.
+1. **Terraform**: Run `terraform destroy` locally or via GitHub Action to remove all infrastructure.
 2. **Azure Portal**: (Manual) Go to your Static Web App resource and click **Delete**.
 3. **GitHub Workflow**: Delete the `.github/workflows/azure-static-web-apps.yml` and `.github/workflows/terraform.yml` files.
 4. **GitHub Secrets**: Remove any secrets from your repository settings.
@@ -98,7 +118,7 @@ If you want to destroy the static site and stop deployment:
 ## Security
 
 This project is safe for public repositories:
-- **Secrets**: The sensitive deployment token and Azure credentials are NOT stored in the code. They are referenced via GitHub Secrets, which are encrypted and not visible to public viewers or contributors.
-- **Terraform State**: We use a remote backend for Terraform state storage (Azure Blob Storage). State files often contain sensitive metadata, so keeping them out of Git is critical for security.
-- **Client-side only**: Since this is a static site (SPA), there is no backend code or database credentials exposed. All formatting logic happens in the user's browser.
-- **CSP**: The `staticwebapp.config.json` includes a Content Security Policy (CSP) to help protect against XSS and other injection attacks.
+- **Secrets**: The sensitive deployment token and Azure credentials are NOT stored in the code. They are referenced via GitHub Secrets.
+- **Terraform State**: We use a remote backend for Terraform state storage (Azure Blob Storage) to keep sensitive state metadata out of Git.
+- **Client-side only**: Since this is a static site (SPA), there is no backend code or database credentials exposed.
+- **CSP**: The `staticwebapp.config.json` includes a Content Security Policy (CSP) to help protect against XSS.
