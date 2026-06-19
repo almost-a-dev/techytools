@@ -27,11 +27,6 @@ resource "azurerm_static_web_app" "swas" {
   sku_size            = "Free"
 }
 
-moved {
-  from = azurerm_static_site.swas
-  to   = azurerm_static_web_app.swas
-}
-
 output "static_web_app_default_host_name" {
   value = azurerm_static_web_app.swas.default_host_name
 }

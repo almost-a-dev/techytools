@@ -107,6 +107,15 @@ Ensure you granted the "Contributor" role at the **Subscription** level:
 az role assignment create --assignee <AZURE_CLIENT_ID> --role "Contributor" --scope /subscriptions/<AZURE_SUBSCRIPTION_ID>
 ```
 
+#### Troubleshooting: Resource Renaming (Deprecation Fix)
+If you previously deployed the infrastructure and see that Terraform wants to "destroy and create" your Static Web App, it's because the resource type was updated from `azurerm_static_site` to `azurerm_static_web_app`. 
+
+To avoid recreation, you can manually update the state:
+```bash
+terraform state mv azurerm_static_site.swas azurerm_static_web_app.swas
+```
+*Note: Run this inside the `terraform` folder after running `terraform init`.*
+
 ## Teardown / Deletion
 
 If you want to destroy the static site and stop deployment:
