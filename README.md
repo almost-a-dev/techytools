@@ -87,6 +87,26 @@ Add the following secrets to your GitHub repository:
 - `TF_STATE_STORAGE_ACCOUNT`: `techytoolstfstate`
 - `TF_STATE_CONTAINER`: `tfstate`
 
+#### Troubleshooting: Resource Already Exists (Rename Fix)
+If you see an error saying the resource `already exists` after the rename to `azurerm_static_web_app`, it means Terraform's state is out of sync. 
+
+To fix this, you must tell Terraform to "forget" the old name and "adopt" the existing resource under the new name:
+
+1.  **Initialize Terraform** (if not done):
+    ```bash
+    cd terraform
+    terraform init -backend-config="resource_group_name=<RG>" -backend-config="storage_account_name=<STORAGE>" -backend-config="container_name=<CONTAINER>" -backend-config="key=terraform.tfstate"
+    ```
+2.  **Remove the old reference** from state:
+    ```bash
+    terraform state rm azurerm_static_site.swas
+    ```
+3.  **Import the existing resource** into the new reference:
+    ```bash
+    # Replace <subscription-id> and <resource-group> with your actual values
+    terraform import azurerm_static_web_app.swas /subscriptions/<subscription-id>/resourceGroups/rg-techytools/providers/Microsoft.Web/staticSites/stapp-techytools
+    ```
+
 ## Teardown / Deletion
 
 If you want to destroy the static site and stop deployment:
