@@ -12,7 +12,6 @@ terraform {
 provider "azurerm" {
   features {}
   skip_provider_registration = true
-  #
 }
 
 resource "azurerm_resource_group" "rg" {
@@ -20,7 +19,7 @@ resource "azurerm_resource_group" "rg" {
   location = var.location
 }
 
-resource "azurerm_static_site" "swas" {
+resource "azurerm_static_web_app" "swas" {
   name                = var.app_name
   resource_group_name = azurerm_resource_group.rg.name
   location            = azurerm_resource_group.rg.location
@@ -28,11 +27,16 @@ resource "azurerm_static_site" "swas" {
   sku_size            = "Free"
 }
 
+moved {
+  from = azurerm_static_site.swas
+  to   = azurerm_static_web_app.swas
+}
+
 output "static_web_app_default_host_name" {
-  value = azurerm_static_site.swas.default_host_name
+  value = azurerm_static_web_app.swas.default_host_name
 }
 
 output "static_web_app_api_key" {
-  value     = azurerm_static_site.swas.api_key
+  value     = azurerm_static_web_app.swas.api_key
   sensitive = true
 }
